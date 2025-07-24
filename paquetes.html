@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Buzón Inteligente - Paquetes</title>
+  <link rel="stylesheet" href="css/style.css" />
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      collection,
+      getDocs,
+      deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBO--T703GHdsBxPojedzqeHFyCaihPJJ0",
+      authDomain: "buzoninteligente-71139.firebaseapp.com",
+      projectId: "buzoninteligente-71139",
+      storageBucket: "buzoninteligente-71139.appspot.com",
+      messagingSenderId: "721834659698",
+      appId: "1:721834659698:web:301f3881c27487ef4a97eb"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let speechEnabled = false;
+    let ultimoEstado = null;
+
+    window.addEventListener("click", () => { speechEnabled = true; });
+    window.addEventListener("touchstart", () => { speechEnabled = true; });
+
+    function reproducirVoz(mensaje) {
+      if (!speechEnabled) return;
+      const texto = mensaje === "tiene_paquete"
+        ? "¡Ha llegado un paquete!"
+        : "El buzón está vacío";
+      const utter = new SpeechSynthesisUtterance(texto);
+      utter.lang = "es-MX";
+
+      function esperarYHablar() {
+        const voices = speechSynthesis.getVoices();
+        if (voices.length === 0) {
+          setTimeout(esperarYHablar, 100);
+        } else {
+          utter.voice = voices.find(v => v.lang === "es-MX") || voices[0];
+          speechSynthesis.speak(utter);
+        }
+      }
+      esperarYHablar();
+    }
+
+    async function actualizarPanel() {
+      const docRef = doc(db, "buzones", "buzon_principal");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const estado = data.estado || "sin_paquete";
+        const clave = data.clave || "----";
+
+        document.getElementById("mensaje-paquete").textContent =
+          estado === "tiene_paquete"
+            ? "¡Ha llegado un paquete!"
+            : "Sin paquetes por ahora.";
+        document.getElementById("clave-generada").textContent = clave;
+
+        if (estado !== ultimoEstado) {
+          reproducirVoz(estado);
+          ultimoEstado = estado;
+        }
+      }
+    }
+
+    async function cargarHistorial() {
+      const historialRef = collection(db, "buzones", "buzon_principal", "historial");
+      const querySnapshot = await getDocs(historialRef);
+      const lista = document.getElementById("lista-historial");
+      lista.innerHTML = "";
+      const docsOrdenados = querySnapshot.docs.sort((a, b) => {
+        const ha = a.data().hora || "";
+        const hb = b.data().hora || "";
+        return hb.localeCompare(ha);
+      });
+      docsOrdenados.forEach((doc) => {
+        const data = doc.data();
+        const li = document.createElement("li");
+        li.textContent = `📦 ${data.hora || ""} – ${data.cantidad || 0} paquete(s) – ${data.peso || 0} kg`;
+        lista.appendChild(li);
+      });
+    }
+
+    async function actualizarLecturasSensores() {
+      const sensoresRef = doc(db, "sensores", "lecturas");
+      const docSnap = await getDoc(sensoresRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        document.getElementById("lectura-infrarrojo").textContent = 
+          data.infrarrojo ? "Objeto detectado ✅" : "Sin objeto ❌";
+        document.getElementById("lectura-ultrasonico").textContent = 
+          `${data.ultrasonico?.toFixed(2) || 0} cm`;
+        document.getElementById("lectura-peso").textContent = 
+          `${data.peso?.toFixed(2) || 0} kg`;
+      }
+    }
+
+    async function eliminarHistorial() {
+      const historialRef = collection(db, "buzones", "buzon_principal", "historial");
+      const querySnapshot = await getDocs(historialRef);
+      for (const docu of querySnapshot.docs) {
+        await deleteDoc(docu.ref);
+      }
+      await cargarHistorial();
+      console.log("✅ Historial eliminado.");
+    }
+
+    async function guardarClaveEnFirestore() {
+      const clave = Math.floor(1000 + Math.random() * 9000).toString();
+      const buzRef = doc(db, "buzones", "buzon_principal");
+      await setDoc(buzRef, { clave }, { merge: true });
+      document.getElementById("clave-generada").textContent = clave;
+
+      // 🚀 Enviar clave al backend para enviar por WhatsApp
+      try {
+        const response = await fetch("http://localhost:3000/enviar-whatsapp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clave })
+        });
+
+        const result = await response.json();
+        console.log("📲 WhatsApp enviado:", result);
+      } catch (err) {
+        console.error("❌ Error enviando WhatsApp:", err);
+      }
+    }
+
+    window.guardarClaveEnFirestore = guardarClaveEnFirestore;
+    window.eliminarHistorial = eliminarHistorial;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      actualizarPanel();
+      cargarHistorial();
+      actualizarLecturasSensores();
+      setInterval(() => {
+        actualizarPanel();
+        cargarHistorial();
+        actualizarLecturasSensores();
+      }, 2000);
+    });
+  </script>
+</head>
+<body>
+  <div class="page-wrapper">
+    <header class="navbar">
+      <div class="navbar-container">
+        <h1 class="logo">📦 Buzón Inteligente</h1>
+        <button onclick="window.location.href='index.html'" class="btn-login">Inicio</button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section id="estado-paquete" class="estado tarjeta">
+        <h2>Estado del Buzón:</h2>
+        <p id="mensaje-paquete" class="sin-paquete">Sin paquetes por ahora.</p>
+      </section>
+
+      <section id="clave-section" class="clave tarjeta">
+        <h2>🔑 Clave de apertura</h2>
+        <p id="clave-generada">----</p>
+      </section>
+
+      <button onclick="guardarClaveEnFirestore()" class="btn-principal" style="margin-bottom: 15px;">
+        🔐 Generar Clave Nueva
+      </button>
+
+      <section id="lecturas-sensores" class="sensores tarjeta">
+        <h2>📊 Lecturas de Sensores</h2>
+        <div class="lectura-sensor">
+          <span>Infrarrojo:</span>
+          <span id="lectura-infrarrojo">Cargando...</span>
+        </div>
+        <div class="lectura-sensor">
+          <span>Ultrasónico:</span>
+          <span id="lectura-ultrasonico">Cargando...</span>
+        </div>
+        <div class="lectura-sensor">
+          <span>Peso:</span>
+          <span id="lectura-peso">Cargando...</span>
+        </div>
+      </section>
+
+      <section id="historial" class="historial tarjeta">
+        <h2>📜 Historial de entregas</h2>
+        <ul id="lista-historial">
+          <li>Cargando historial...</li>
+        </ul>
+        <button onclick="eliminarHistorial()" class="btn-principal" style="background-color: crimson; margin-top: 15px;">
+          🗑️ Eliminar Historial
+        </button>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <p>© 2025 Proyecto Escolar – Buzón Inteligente</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registro - Buzón Inteligente</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar-container">
+      <h1 class="logo">📦 Buzón Inteligente</h1>
+      <a href="index.html" class="btn-login">Inicio</a>
+    </div>
+  </header>
+
+  <div class="auth-container">
+    <div class="auth-card">
+      <h1>📦 Crear Cuenta</h1>
+      <form id="registerForm">
+        <label for="register-name">Nombre completo</label>
+        <input type="text" id="register-name" required>
+
+        <label for="register-email">Correo electrónico</label>
+        <input type="email" id="register-email" required>
+
+        <label for="register-password">Contraseña</label>
+        <input type="password" id="register-password" required minlength="6">
+
+        <label for="register-confirm">Confirmar contraseña</label>
+        <input type="password" id="register-confirm" required>
+
+        <button type="submit" class="btn-auth">Registrarse</button>
+      </form>
+
+      <div class="auth-divider">o</div>
+      <button id="googleSignIn" class="btn-google">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png" alt="Google">
+        Registrarse con Google
+      </button>
+
+      <p class="auth-link">¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a></p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p>© 2025 Proyecto Escolar – Buzón Inteligente</p>
+    </div>
+  </footer>
+
+  <script type="module" src="js/authController.js"></script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Buzón Inteligente - Proyecto</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="page-wrapper">
+    <header class="navbar">
+      <div class="navbar-container">
+        <h1 class="logo">📦 Buzón Inteligente</h1>
+        <div id="auth-buttons">
+          <!-- Se llena dinámicamente -->
+          <a href="login.html" class="btn-login">Iniciar sesión</a>
+          <a href="register.html" class="btn-login">Registrarse</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section id="pantalla-inicial" class="vista-activa">
+        <div class="welcome-container">
+          <div class="welcome-text">
+            <h2>Bienvenido al Buzón Inteligente</h2>
+            <p>
+              Este proyecto integra sensores físicos, microcontroladores y tecnologías web modernas para ofrecer una solución innovadora de recepción de paquetes. El buzón inteligente permite generar claves de acceso temporales, monitorear en tiempo real el estado del buzón, recibir notificaciones inmediatas al detectar entregas y consultar un historial detallado de movimientos.
+              Gracias a la sincronización con Firebase y la integración con interfaces intuitivas, el sistema proporciona al usuario una experiencia segura, confiable y eficiente.
+            </p>
+            <div class="welcome-buttons" id="welcome-buttons">
+              <a href="login.html" class="btn-principal">Iniciar sesión</a>
+              <a href="register.html" class="btn-principal">Registrarse</a>
+            </div>
+          </div>
+          <div class="welcome-image">
+            <img src="images/buzz.png" alt="Imagen del Buzón Inteligente" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Sección ¿Cómo funciona? -->
+      <section class="info-section with-image">
+        <div class="info-wrapper">
+          <div class="info-text">
+            <h2>¿Cómo funciona?</h2>
+            <p>
+              El sistema permite al usuario generar una clave desde la página web, la cual se sincroniza automáticamente con el buzón físico. Una vez ingresada correctamente desde el teclado, el buzón se abre mediante un servomotor. Sensores detectan si hay paquetes y actualizan el estado en tiempo real.
+            </p>
+          </div>
+          <div class="info-img">
+            <img src="images/funsion.jpeg" alt="Funcionamiento del buzón" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Sección Beneficios -->
+      <section class="info-section with-image alt">
+        <div class="info-wrapper reverse">
+          <div class="info-text">
+            <h2>Beneficios del Buzón Inteligente</h2>
+            <ul>
+              <li>🔐 Acceso controlado mediante clave personalizada.</li>
+              <li>📦 Notificaciones automáticas cuando llega un paquete.</li>
+              <li>📈 Historial de entregas para seguimiento.</li>
+              <li>🌐 Acceso remoto desde cualquier dispositivo con conexión a Internet.</li>
+              <li>⚙️ Fácil integración con sensores y Firebase.</li>
+            </ul>
+          </div>
+          <div class="info-img">
+            <img src="images/beneficios.jpg" alt="Beneficios del sistema" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Sección Dónde puede usarse -->
+      <section class="info-section with-image">
+        <div class="info-wrapper">
+          <div class="info-text">
+            <h2>¿Dónde puede usarse?</h2>
+            <p>
+              Este sistema es ideal para casas particulares, edificios, oficinas, empresas de mensajería o cualquier lugar donde se requiera control sobre la recepción de entregas y paquetería.
+            </p>
+          </div>
+          <div class="info-img">
+            <img src="images/uso.jpeg" alt="Lugares donde puede usarse" />
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <p>© 2025 Proyecto Escolar – Buzón Inteligente</p>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { auth, onAuthStateChanged, signOut } from './js/firebase.js';
+    
+    onAuthStateChanged(auth, (user) => {
+      const authButtons = document.getElementById('auth-buttons');
+      const welcomeBtns = document.getElementById('welcome-buttons');
+
+      if (user) {
+        authButtons.innerHTML = `
+          <a href="paquetes.html" class="btn-login">Paquetes</a>
+          <a href="usuarios.html" class="btn-login">Usuarios</a>
+          <div class="user-dropdown">
+            <button class="btn-login">Mi Cuenta</button>
+            <div class="dropdown-content">
+              <p>${user.email}</p>
+              <button id="btn-cerrar-sesion">Cerrar sesión</button>
+            </div>
+          </div>
+        `;
+        if (welcomeBtns) welcomeBtns.style.display = 'none';
+
+        const cerrar = document.getElementById('btn-cerrar-sesion');
+        cerrar.addEventListener('click', async () => {
+          await signOut(auth);
+          window.location.href = 'index.html';
+        });
+      } else {
+        authButtons.innerHTML = `
+          <a href="login.html" class="btn-login">Iniciar sesión</a>
+          <a href="register.html" class="btn-login">Registrarse</a>
+        `;
+        if (welcomeBtns) welcomeBtns.style.display = 'flex';
+      }
+    });
+  </script>
+</body>
+</html>
